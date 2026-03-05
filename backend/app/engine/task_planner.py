@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 import time
 from datetime import datetime
@@ -97,22 +98,31 @@ class TaskPlanner:
             list[TaskNode]: 包含单个动态任务的列表（LLM 分解结果）。
         """
         logger.info(f"[TaskPlanner] LLM 动态分解开始, intent={intent}")
-        llm = get_planning_llm()
-        prompt = (
-            f"将以下差旅需求分解为可执行的原子任务列表：\n"
-            f"意图: {intent}\n"
-            f"上下文: {context}\n\n"
-            f"每个任务包含: name, description, agent_role, dependencies\n"
-            f"agent_role 取值: orchestrator, intent, query_rewriter, travel_apply, itinerary, booking"
-        )
-        result = await llm.ainvoke(prompt)
-        logger.debug(f"[TaskPlanner] LLM 分解结果: {result.content[:100]}")
-        return [TaskNode(
-            task_id=f"task-{uuid.uuid4().hex[:6]}",
-            name="动态任务",
-            description=result.content[:200],
-            agent_role=AgentRole.ORCHESTRATOR,
-        )]
+        try:
+            llm = get_planning_llm()
+            prompt = (
+                f"将以下差旅需求分解为可执行的原子任务列表：\n"
+                f"意图: {intent}\n"
+                f"上下文: {context}\n\n"
+                f"每个任务包含: name, description, agent_role, dependencies\n"
+                f"agent_role 取值: orchestrator, intent, query_rewriter, travel_apply, itinerary, booking"
+            )
+            result = await asyncio.wait_for(llm.ainvoke(prompt), timeout=15)
+            logger.debug(f"[TaskPlanner] LLM 分解结果: {result.content[:100]}")
+            return [TaskNode(
+                task_id=f"task-{uuid.uuid4().hex[:6]}",
+                name="动态任务",
+                description=result.content[:200],
+                agent_role=AgentRole.ORCHESTRATOR,
+            )]
+        except (asyncio.TimeoutError, Exception) as e:
+            logger.warning(f"[TaskPlanner] LLM 动态分解失败或超时: {e}, 使用默认单任务")
+            return [TaskNode(
+                task_id=f"task-{uuid.uuid4().hex[:6]}",
+                name="处理请求",
+                description=f"处理 {intent} 类型的用户请求",
+                agent_role=AgentRole.ORCHESTRATOR,
+            )]
 
     def get_plan(self, plan_id: str) -> TaskPlan | None:
         """根据 plan_id 获取任务计划。
@@ -265,6 +275,22 @@ def _instantiate_template(
 
 
 _TASK_TEMPLATES: dict[str, list[dict]] = {
+    "general_chat": [
+        {
+            "name": "通用对话",
+            "description": "处理用户的通用问题或闲聊",
+            "agent_role": "orchestrator",
+            "depends_on": [],
+        },
+    ],
+    "unclear": [
+        {
+            "name": "意图澄清",
+            "description": "引导用户明确差旅需求",
+            "agent_role": "orchestrator",
+            "depends_on": [],
+        },
+    ],
     "travel_apply": [
         {
             "name": "收集出差信息",

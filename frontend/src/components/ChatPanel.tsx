@@ -58,7 +58,7 @@ export function ChatPanel() {
               ].map((hint) => (
                 <button
                   key={hint}
-                  onClick={() => { setInput(hint); }}
+                  onClick={() => { if (!isLoading) sendMessage(hint); }}
                   className="text-left text-sm px-4 py-3 rounded-xl border border-gray-200 hover:border-brand-500 hover:bg-brand-50 transition-colors"
                 >
                   {hint}
