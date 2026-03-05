@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  .chat-bubble-user {
+    @apply bg-brand-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 max-w-[80%];
+  }
+  .chat-bubble-assistant {
+    @apply bg-white text-gray-900 rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[80%] shadow-sm border border-gray-100;
+  }
+  .task-card {
+    @apply bg-white rounded-xl border border-gray-200 p-4 transition-all hover:shadow-md;
+  }
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.card-action-btn {
+  @apply text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:scale-105 active:scale-95;
+}
